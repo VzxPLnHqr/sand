@@ -53,18 +53,30 @@ def multiply_by_scalar(c,k,verbose=False):
     SandpileConfig
   """
 
-  global topplings # ugly hack
+  global topplings, cancellations # ugly hack
   topplings = 0
+  cancellations = 0
+  
+  def removeIdentity(c):
+    # whenever we can, we remove a copy of the identity
+    # configuration before stabilizing
+      global cancellations
+      res = (c - c.sandpile().identity())
+      if( all(i >= 0 for i in res.values()) ):
+        cancellations += 1
+        return res
+      else:
+        return c
 
   def cAdd(c1, c2):
       global topplings
-      [res, fv] = (c1 + c2).stabilize(with_firing_vector=True)
+      [res, fv] = removeIdentity((c1 + c2)).stabilize(with_firing_vector=True)
       ts = sum(fv.values())
       topplings += ts
       return res
   def cDouble(c):
       global topplings
-      [res, fv] = (c + c).stabilize(with_firing_vector=True)
+      [res, fv] = removeIdentity((c + c)).stabilize(with_firing_vector=True)
       ts = sum(fv.values())
       topplings += ts
       return res
@@ -80,5 +92,5 @@ def multiply_by_scalar(c,k,verbose=False):
           return f(cDouble(accum), k // 2)
       
   res = f(c,k) # triggers modifying global topplings variable, uggly hack.
-  if verbose: print("topplings: ", topplings)
+  if verbose: print("topplings: ", topplings, "cancellations: ", cancellations)
   return res
